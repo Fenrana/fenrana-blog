@@ -13,9 +13,9 @@
     <div class="categories-data">
       <el-table :data="tableData" style="width: 100%">
         <el-table-column prop="id" label="ID" width="200"> </el-table-column>
-        <el-table-column prop="description" label="描述" width="400">
-        </el-table-column>
         <el-table-column prop="name" label="名称" width="200">
+        </el-table-column>
+        <el-table-column prop="description" label="描述" width="400">
         </el-table-column>
         <el-table-column label="操作">
           <template slot-scope="scope">
@@ -66,21 +66,13 @@ export default {
     };
   },
   created() {
-    this.axios
-      .get("http://localhost:8081/admin/categorys")
-      .then(response => {
-        window.console.log(response.data);
-        this.tableData = response.data.data;
-      })
-      .catch(error => {
-        window.console.log(error);
-      });
+    this.init();
   },
   methods: {
     edit(row) {
+      window.console.log(row);
       this.dialogFormVisible = true;
-      this.form.name = row.name;
-      this.form.description = row.description;
+      this.form = row;
     },
     add() {
       this.form = {};
@@ -93,12 +85,14 @@ export default {
       var that = this;
       this.axios
         .post("http://localhost:8081/admin/addCategory", {
+          id: this.form.id,
           name: this.form.name,
           description: this.form.description
         })
         .then(response => {
           if (response.data.code === 200) {
             that.isLoading = false;
+            this.init();
             that.dialogFormVisible = false;
             this.$message({
               type: "success",
@@ -115,6 +109,18 @@ export default {
           window.console.log(error);
         });
     },
+    /*×数据初始化*/
+    init() {
+      this.axios
+        .get("http://localhost:8081/admin/categorys")
+        .then(response => {
+          window.console.log(response.data);
+          this.tableData = response.data.data;
+        })
+        .catch(error => {
+          window.console.log(error);
+        });
+    },
     //删除分类名称
     deletea(row) {
       this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
@@ -126,6 +132,11 @@ export default {
           this.axios
             .get("http://localhost:8081/admin/deleteCategory/" + row.id)
             .then(res => {
+              this.$message({
+                type: "info",
+                message: "删除成功"
+              });
+              this.init();
               window.console.log(res);
             })
             .catch(error => {
