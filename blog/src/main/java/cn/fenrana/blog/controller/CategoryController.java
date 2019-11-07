@@ -25,8 +25,12 @@ public class CategoryController {
 
     @PostMapping("/admin/addCategory")
     public ResultJson<Category> addCategory(@RequestBody Category category) {
-        iCategoryService.saveOrUpdate(category);
-        return ResultJson.ok();
+        boolean b = iCategoryService.saveOrUpdate(category);
+        if (b) {
+            return ResultJson.ok();
+        }else {
+            return ResultJson.fail();
+        }
     }
     /**
      * 返回所有分类的集合
@@ -42,11 +46,18 @@ public class CategoryController {
         }
 
     }
-
+    /**
+     * 删除分类
+     * */
     @GetMapping("/admin/deleteCategory/{id}")
     public ResultJson<Category> deleteCategoryById(@PathVariable Long id){
         boolean b = iCategoryService.removeById(id);
-        return ResultJson.ok();
+        if (b){
+            return ResultJson.ok();
+        }else {
+            return ResultJson.fail();
+        }
+
     }
 
 }
