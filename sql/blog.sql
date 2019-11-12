@@ -2,19 +2,20 @@ create table article
 (
     id              bigint auto_increment comment '编号'
         primary key,
-    title           varchar(400)  null comment '标题',
-    cover           varchar(400)  null comment '封面图片',
-    author          varchar(100)  not null comment '作者',
-    content         mediumtext    null comment '内容',
-    category        varchar(20)   null comment '分类',
-    state           varchar(100)  not null comment '状态',
-    publish_time    datetime      null comment '发布时间',
-    edit_time       datetime      null comment '上次修改时间',
-    create_time     datetime      null comment '创建时间',
-    type            int default 0 null comment '类型， 0原创 1转载',
-    visits          int           null comment '浏览量',
-    summary         varchar(500)  null comment '文章概要',
-    disallowComment tinyint       null comment '是否开启评论'
+    title           varchar(400)      null comment '标题',
+    cover           varchar(400)      null comment '封面图片',
+    author          varchar(100)      not null comment '作者',
+    content         mediumtext        null comment '内容',
+    category        varchar(20)       null comment '分类',
+    state           varchar(100)      not null comment '状态',
+    publish_time    datetime          null comment '发布时间',
+    edit_time       datetime          null comment '上次修改时间',
+    create_time     datetime          null comment '创建时间',
+    type            int     default 0 null comment '类型， 0原创 1转载',
+    visits          int               null comment '浏览量',
+    summary         varchar(500)      null comment '文章概要',
+    disallowComment tinyint           null comment '是否开启评论 0 false 1 true',
+    is_top          tinyint default 0 null comment '是否开启置顶 0 false 1true'
 )
     comment '文章表' charset = utf8;
 

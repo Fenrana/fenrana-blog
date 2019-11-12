@@ -8,21 +8,17 @@
       <el-main>
         <router-view></router-view>
       </el-main>
-      <el-footer>
-        <admin-footer></admin-footer>
-      </el-footer>
     </el-container>
   </el-container>
 </template>
 
 <script>
 import AdminAside from "./components/AdminAside";
-import AdminFooter from "./components/AdminFooter";
+// import AdminFooter from "./components/AdminFooter";
 export default {
   name: "AdminIndex",
   components: {
-    AdminAside,
-    AdminFooter
+    AdminAside
   },
   methods: {
     add() {

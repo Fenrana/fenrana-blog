@@ -57,6 +57,7 @@ public class Article implements Serializable {
 
     /**
      * 状态
+     * 0 正常发布 1 草稿 2 回收站
      */
     private String state;
 
@@ -92,9 +93,15 @@ public class Article implements Serializable {
 
     /**
      * 是否开启评论
+     * 0 关闭评论
+     * 1 开启评论
      */
     @TableField("disallowComment")
     private Integer disallowComment;
-
-
+    /**
+     * 是否指定
+     * 0 关闭置顶
+     * 1 开启置顶
+     * */
+    private Integer isTop;
 }

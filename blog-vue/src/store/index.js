@@ -7,7 +7,7 @@ export default new Vuex.Store({
   state: {
     title: "",
     cont: 1000,
-    blog: "#### how to use mavonEditor in nuxt.js"
+    blog: "开始编辑吧"
   },
   mutations: {
     setTitle(state, value) {
