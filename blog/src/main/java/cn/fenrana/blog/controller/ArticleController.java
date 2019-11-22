@@ -1,24 +1,26 @@
 package cn.fenrana.blog.controller;
 
 
-import cn.fenrana.blog.entity.Article;
+import cn.fenrana.blog.entity.*;
+import cn.fenrana.blog.entity.dto.ArticleDto;
 import cn.fenrana.blog.utils.ResultJson;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.Query;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.RestController;
 import cn.fenrana.blog.service.IArticleService;
 import cn.fenrana.blog.service.IArticleTagService;
 import cn.fenrana.blog.service.IArticleCategoryService;
-import cn.fenrana.blog.entity.ArticleTag;
-import cn.fenrana.blog.entity.ArticleCategory;
+import cn.fenrana.blog.service.ITagService;
+import cn.fenrana.blog.service.ICategoryService;
 
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -40,6 +42,15 @@ public class ArticleController {
     @Autowired
     IArticleCategoryService iArticleCategoryService;
 
+    @Autowired
+    ICategoryService iCategoryService;
+
+    @Autowired
+    ITagService iTagService;
+    /**
+     * 保存文章
+     *
+     * */
     @PostMapping(value = "/admin/addArticle")
     public ResultJson addArticle(@RequestBody Map<String, Object> map){
         try{
@@ -47,6 +58,11 @@ public class ArticleController {
             Article article = BeanUtil.mapToBean(map, Article.class, false);
             article.setAuthor("Fenrana");
             article.setState("0");
+            article.setVisits(0);
+            //判断文章概要, 如果为空，截取内容的一部分 TODO 待完善
+            if(StrUtil.isNotBlank(article.getSummary())) {
+
+            }
             iArticleService.save(article);
             //保存标签
             Long articleId = article.getId();
@@ -71,11 +87,60 @@ public class ArticleController {
 
     }
 
-    @GetMapping()
-    public ResultJson<Article> articleList() {
+    /*×
+    * 查询文章
+    * */
+    @PostMapping("admin/articles")
+    public ResultJson<Map> articleList(@RequestBody PageQuery pageQuery) {
         Page<Article> page = new Page<>();
-        page.setCurrent(1);
-        iArticleService.page(page);
-        return ResultJson.ok();
+        page.setCurrent(pageQuery.getCurrent());
+        page.setSize(pageQuery.getSize());
+        QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
+        //要查询的列
+        queryWrapper.select("id","title","cover","category","state","publish_time", "create_time","type", "visits","summary","disallowComment", "is_top");
+        //根据标题模糊查询调价
+        if (StrUtil.isNotBlank(pageQuery.getSearchKey())){
+            queryWrapper.like("title", pageQuery.getSearchKey());
+        }
+        Map<String, String> map = new HashMap<>();
+        if (pageQuery.getCategoryId() != null){
+            map.put("category", pageQuery.getCategoryId().toString());
+
+        }
+        if (StrUtil.isNotBlank(pageQuery.getState())){
+            map.put("state", pageQuery.getState());
+        }
+        queryWrapper.allEq(map,false);
+        IPage<Article> articles = iArticleService.page(page, queryWrapper);
+        long total = articles.getTotal();
+        List<Article> records = articles.getRecords();
+        List<ArticleDto> articleDtoList = new ArrayList<>();
+        // 标签查询
+        records.forEach(
+            item -> {
+                // 查标签
+              QueryWrapper<ArticleTag> articleTagQueryWrapper1 = new QueryWrapper<>();
+                articleTagQueryWrapper1.eq("article_id", item.getId());
+              List<ArticleTag> articleTags = iArticleTagService.list(articleTagQueryWrapper1);
+              List<Long> collect =
+                  articleTags.stream().map(ArticleTag::getTagId).collect(Collectors.toList());
+              Collection<Tag> tags = iTagService.listByIds(collect);
+
+              //查分类
+              QueryWrapper<Category> categoryQueryWrapper = new QueryWrapper<>();
+              categoryQueryWrapper.eq("id", item.getCategory());
+              Category category = iCategoryService.getOne(categoryQueryWrapper);
+              item.setCategory(category.getName());
+
+              //数据封装
+              ArticleDto articleDto = new ArticleDto();
+              BeanUtil.copyProperties(item, articleDto);
+              articleDto.setTags((List<Tag>) tags);
+                articleDtoList.add(articleDto);
+            });
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("total", total);
+        dataMap.put("data", articleDtoList);
+        return ResultJson.ok(dataMap);
     }
 }
