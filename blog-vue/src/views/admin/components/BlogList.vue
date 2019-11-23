@@ -4,7 +4,7 @@
       <div>
         <span>关键词:</span>
         <el-input
-          v-model="searchKey"
+          v-model="pageQuery.searchKey"
           placeholder="请输入内容"
           style="width: 200px;margin-left: 8px;"
         ></el-input>
@@ -30,7 +30,7 @@
       <div class="search-item">
         <span>分类：</span>
         <el-select
-          v-model="category"
+          v-model="pageQuery.category"
           placeholder="请选择"
           style="width: 200px;margin-left: 8px;"
         >
@@ -63,7 +63,7 @@
             prop="state"
             label="状态"
             width="130"
-            :formatter="formatterSatte"
+            :formatter="formatterState"
           >
           </el-table-column>
           <el-table-column prop="category" label="分类" width="130">
@@ -88,40 +88,53 @@
           ></el-table-column>
           <el-table-column label="操作">
             <template slot-scope="scope">
-              <el-button
-                size="mini"
-                @click="handleEdit(scope.$index, scope.row)"
-                >编辑</el-button
-              >
-              <el-button
-                size="mini"
-                type="info"
-                @click="handleDelete(scope.$index, scope.row)"
-                >回收站</el-button
-              >
-              <el-button
-                size="mini"
-                type="danger"
-                @click="handleDelete(scope.$index, scope.row)"
-                >删除</el-button
-              >
+              <template v-if="scope.row.state === '2'">
+                <el-button
+                  size="mini"
+                  @click="handleEdit(scope.$index, scope.row)"
+                  >编辑</el-button
+                >
+                <el-button
+                  size="mini"
+                  type="info"
+                  @click="articleRestore(scope.row)"
+                  >还原</el-button
+                >
+                <el-button
+                  size="mini"
+                  type="danger"
+                  @click="handleDelete(scope.$index, scope.row)"
+                  >删除</el-button
+                >
+              </template>
+              <template v-else>
+                <el-button
+                  size="mini"
+                  @click="handleEdit(scope.$index, scope.row)"
+                  >编辑</el-button
+                >
+                <el-button
+                  size="mini"
+                  type="info"
+                  @click="articleRecycle(scope.row)"
+                  >回收站</el-button
+                >
+                <el-button
+                  size="mini"
+                  type="danger"
+                  @click="handleDelete(scope.$index, scope.row)"
+                  >删除</el-button
+                >
+              </template>
             </template>
           </el-table-column>
         </el-table>
       </div>
       <div class="pagination">
-        <!--        <el-pagination-->
-        <!--          background-->
-        <!--          layout="prev, pager, next"-->
-        <!--          :total="total"-->
-        <!--          :page-sizes="[10, 20, 30]"-->
-        <!--        >-->
-        <!--        </el-pagination>-->
-
         <el-pagination
           @size-change="handleSizeChange"
           background
-          :current-page.sync="current"
+          :current-page.sync="pageQuery.current"
           @current-change="handleCurrentChange"
           :page-sizes="[10, 20, 30]"
           :page-size="100"
@@ -135,39 +148,38 @@
 </template>
 
 <script>
+import api from "@/api/urls";
 export default {
   name: "List",
   data() {
     return {
       state: null,
-      searchKey: "",
       states: [
         { id: 1, name: "已发布", value: 0 },
         { id: 2, name: "草稿", value: 1 },
         { id: 3, name: "回收站", value: 2 }
       ],
       categoryOptions: [],
-      category: "",
       tableData: [],
       total: 0, //文章的总条数
-      current: 1,
-      loading: true
+      loading: true,
+      pageQuery: {
+        searchKey: "",
+        category: "",
+        current: 1,
+        size: 10
+      }
     };
   },
   created() {
     this.init();
-    this.initData({
-      current: this.current,
-      size: 10,
-      searchKey: null,
-      category: null
-    });
+    this.initData(this.pageQuery);
   },
   methods: {
     //分类的初始化方法
     initCategory() {
       this.axios
-        .get("http://localhost:8081/admin/categorys")
+        .get(api.categorys)
         .then(response => {
           window.console.log(response.data);
           this.categoryOptions = response.data.data;
@@ -179,12 +191,7 @@ export default {
     //数据的初始化方法
     initData(pageQuery) {
       this.axios
-        .post("http://localhost:8081/admin/articles", {
-          current: pageQuery.current,
-          size: pageQuery.size,
-          searchKey: pageQuery.searchKey,
-          category: pageQuery.category
-        })
+        .post(api.articles, pageQuery)
         .then(response => {
           window.console.log(response.data);
           if (response.data.code === 200) {
@@ -208,12 +215,61 @@ export default {
     handleEdit(index, row) {
       window.console.log(index, row);
     },
+    //文章彻底删除
     handleDelete(index, row) {
       window.console.log(index, row);
     },
+    //文章加入回收站
+    articleRecycle(row) {
+      this.sureMessage(row.title, "加入回收站", api.articlesRecycle(row.id));
+    },
+    // 删除或加入回收站时的确认方法的封装
+    sureMessage(title, meg, url) {
+      this.$msgbox({
+        title: "确认消息",
+        message: "确定把标题为" + title + "的文章" + meg + "?",
+        showCancelButton: true,
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        beforeClose: (action, instance, done) => {
+          if (action === "confirm") {
+            instance.confirmButtonLoading = true;
+            instance.confirmButtonText = "执行中...";
+            this.axios
+              .get(url)
+              .then(response => {
+                window.console.log(response.data);
+                if (response.data.code === 200) {
+                  done();
+                  instance.confirmButtonLoading = false;
+                  this.initData(this.pageQuery);
+                } else {
+                  this.$message({
+                    type: "info",
+                    message: "添加失败!"
+                  });
+                }
+              })
+              .catch(error => {
+                window.console.log(error);
+              });
+          } else {
+            done();
+          }
+        }
+      }).then(action => {
+        this.$message({
+          type: "info",
+          message: "action: " + action
+        });
+      });
+    },
+    // 文章还原 回收站 -> 正常发布
+    articleRestore(row) {
+      this.sureMessage(row.title, "恢复正常吗", api.articleRestore(row.id));
+    },
     //文章状态的计算
-    formatterSatte(row) {
-      window.console.log(row.state);
+    formatterState(row) {
       if (row.state === "0") {
         return "正常发布";
       } else if (row.state === "1") {
@@ -224,21 +280,17 @@ export default {
     },
     //日期的转换
     formatterDate(row) {
-      var date = new Date(row.createTime);
+      const date = new Date(row.createTime);
       return date.toLocaleString();
     },
     handleSizeChange(val) {
       window.console.log(`每页 ${val} 条`);
     },
+    // 下一页
     handleCurrentChange(val) {
       this.loading = true;
-      this.current = val;
-      this.initData({
-        current: val,
-        size: 10,
-        searchKey: null,
-        category: null
-      });
+      this.pageQuery.current = val;
+      this.initData(this.pageQuery);
     }
   }
 };
