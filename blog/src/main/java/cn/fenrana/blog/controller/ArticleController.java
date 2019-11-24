@@ -150,28 +150,38 @@ public class ArticleController {
     @GetMapping("admin/articlesRecycle/{id}")
     public ResultJson articleRecycle(@PathVariable Long id) {
         try {
-           return  updateArticleState(id, "2");
+            return updateArticleState(id, "2");
 
         } catch (Exception e) {
             return ResultJson.fail();
         }
     }
+
     /**
      * 文章恢复正常模式
-     * */
+     */
     @GetMapping("admin/articleRestore/{id}")
     public ResultJson articleRestore(@PathVariable Long id) {
         try {
-            return  updateArticleState(id, "0");
-
+            return updateArticleState(id, "0");
         } catch (Exception e) {
             return ResultJson.fail();
         }
     }
-
+    /**
+     * 文章的删除
+     * */
+    @GetMapping("admin/articleDelete/{id}")
+    public ResultJson articleDelete(@PathVariable Long id){
+        if(iArticleService.removeById(id)){
+            return ResultJson.ok();
+        }else {
+            return ResultJson.fail();
+        }
+    }
     /**
      * 修改文章状态的封装
-     * */
+     */
     private ResultJson updateArticleState(Long id, String state) {
         QueryWrapper<Article> articleQueryWrapper = new QueryWrapper<>();
         articleQueryWrapper.eq("id", id);

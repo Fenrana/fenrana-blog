@@ -122,7 +122,7 @@
                 <el-button
                   size="mini"
                   type="danger"
-                  @click="handleDelete(scope.$index, scope.row)"
+                  @click="articleDelete(scope.row)"
                   >删除</el-button
                 >
               </template>
@@ -216,8 +216,8 @@ export default {
       window.console.log(index, row);
     },
     //文章彻底删除
-    handleDelete(index, row) {
-      window.console.log(index, row);
+    articleDelete(row) {
+      this.sureMessage(row.title, "彻底删除?", api.articleDelete(row.id));
     },
     //文章加入回收站
     articleRecycle(row) {

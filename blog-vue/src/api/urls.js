@@ -8,5 +8,8 @@ export default {
   },
   articleRestore(id) {
     return baseUrl + "/admin/articleRestore/" + id;
+  },
+  articleDelete(id) {
+    return baseUrl + "/admin/articleDelete/" + id;
   }
 };
