@@ -25,6 +25,9 @@ class BlogApplicationTests {
 
     @Test
     void contextLoads() {
+//        String s = "aaa.aa";
+//        String[] split = s.split("\\.");
+//        System.out.println(split);
     }
 
 }
